@@ -38,9 +38,9 @@ BH1750 lightMeter;
 uint32_t lux = 0;
 
 dht DHT;
-uint16_t hum;
-uint16_t hum_total = 0;
-uint16_t hum_avg = 0;
+uint16_t um;
+uint16_t um_total = 0;
+uint16_t um_avg = 0;
 
 float temp = 0;
 float temp_avg = 0;
@@ -76,7 +76,7 @@ TaskHandle_t hTaskSensorHall;
 //?#############################################*/
 void InitWifi(void *pvParameters)
 {
-	disableCore0WDT();
+	//disableCore0WDT();
 
 	String ssid = SSID;
 	String pass = PASS;
@@ -219,11 +219,12 @@ void Encoder(void *pvParameters)
 	{
 		detachInterrupt(PIN_ENCODER);
 		RPM = (count / 10.0 * 60.0); // Calculate revolutions per minute (RPM)
+		// RPM = (count / numero de furos * 60(minuto)) / (periodo em segundos)
 		count = 0;
 		attachInterrupt(PIN_ENCODER, addcount, RISING);
 
 		velocidade_segundos = (float)((2.0 * pi * radius * RPM) / 60.0) / 1000.0; // Calcula a velocidade do vento em m/s
-		velocidade_km = (float)(((2.0 * pi * radius * RPM) / 60.0) / 1000.0) * 3.6; // Calcula velocidade do vento em km/h
+		velocidade_km = (float)velocidade_segundos * 3.6; // Calcula velocidade do vento em km/h
 		
 
 		ENCODER("\nVelocidade: ");
@@ -302,7 +303,7 @@ void SensorHall(void *pvParameters)
 			sensor_total1 += sensor1;
 			sensor_total2 += sensor2;
 
-			if (temp_max < sensor1) // Define qual foi valor max. lido no numero de vezes que foi lido
+			/*if (temp_max < sensor1) // Define qual foi valor max. lido no numero de vezes que foi lido
 			{
 				temp_max = sensor1;
 			}
@@ -320,7 +321,7 @@ void SensorHall(void *pvParameters)
 			if (temp_min2 > sensor2) // Define qual foi valor min. lido no numero de vezes que foi lido
 			{
 				temp_min2 = sensor2;
-			}
+			}*/
 		}
 
 		sensorhall_one = (sensor_total1 / NUMBER_READS);
@@ -354,28 +355,28 @@ void SensorDHT(void *pvParameters)
 	for (;;)
 	{
 		temp_total = 0;
-		hum_total = 0;
+		um_total = 0;
 
 		for (int i = 0; i < NUMBER_READS; i++)
 		{
 			DHT.read11(DHTPIN);
 			temp = DHT.temperature;
-			hum = DHT.humidity;
+			um = DHT.humidity;
 
 			temp_total += temp;
-			hum_total += hum;
+			um_total += um;
 			// vTaskDelay(50);
 		}
 
 		temp_avg = (float)(temp_total / NUMBER_READS);
-		hum_avg = (hum_total / NUMBER_READS);
+		um_avg = (um_total / NUMBER_READS);
 
 		DHT_PRINT("\nTemperature Avg: ");
 		DHT_PRINT(temp_avg);
 		DHT_PRINT("*C");
 
 		DHT_PRINT("\nHumidity Avg: ");
-		DHT_PRINT(hum_avg);
+		DHT_PRINT(um_avg);
 		DHT_PRINT("%\n");
 		// teste();
 
@@ -396,7 +397,7 @@ void Send()
 	//? LUMINOSIDADE
 	Blynk.virtualWrite(V3, lux);
 	//? HUMIDADE
-	Blynk.virtualWrite(V5, hum_avg);
+	Blynk.virtualWrite(V5, um_avg);
 	//? ENCODER
 	Blynk.virtualWrite(V7, velocidade_segundos);
 	Blynk.virtualWrite(V4, velocidade_km);
